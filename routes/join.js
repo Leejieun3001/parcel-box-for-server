@@ -14,14 +14,10 @@ const async = require('async');
 * memberAddress (회원 주소)
 */
 
-
 router.post('/' , function(req, res){
-
     var resultJson={
-        message : '',
-        position : ''
+        message : ''
     };
-
     var JoinParcel_task =[
         //1.connection 가져오기
     function(callback){ 
@@ -33,7 +29,7 @@ router.post('/' , function(req, res){
             else callback(null, connection);
         });
     },
-    //이미 존재하는 회원이지 확인
+    // 이미 존재하는 회원이지 확인
     function(connection, callback){
         let duplicate_check_query = 
         "select * from user where id = ?";
@@ -49,7 +45,7 @@ router.post('/' , function(req, res){
                     //해당 회원이 있는 경우
                     res.status(201).send({
                           message : "signup failure",
-                            detail : "duplicated email"
+                           detail : "duplicated email"
                     });
                     callback('ok');
                 }
@@ -108,7 +104,6 @@ router.post('/' , function(req, res){
 
     ];
 
-
       async.waterfall(JoinParcel_task, function(err, connection, result) {
     if(connection){
       connection.release();
@@ -128,5 +123,75 @@ router.post('/' , function(req, res){
     }
   });
 });
+
+/* 이메일 중복 확인
+ * request params :
+ * tempEamil(query)
+ */
+
+router.get('/duplicateCheck', function(req, res){
+    var duplicate_check_task =[
+
+        //1. connection 가져오기
+        function(callback) {
+            pool.getConnection(function(err, connection){
+                if(err){
+                    console.log("getConnection error : ", err);
+                    callback(err, connection , null);
+                }else callback(null, connection);
+            });
+        },
+        //2.이미 존재하는 회원인지 확인
+        function (connection, callback){
+                let duplicate_check_query = 
+                  "select * from user where id = ?";
+            connection.query(duplicate_check_query ,req.query.tempEmail, function(err,data){
+                if(err){
+                    console.log("duplicate check select query error : ",err);
+                    callback(err, connection, null);
+                }else{
+                    if(data.length ==0){
+                        res.status(200).send({
+                            message : 'no duplication',
+                            detail : 'able to sign up'
+                        });
+                        callback(null, connection);
+                    }
+                    else {
+                        //해당 회원이 있으면 inser 불가
+                        res.status(201).send({
+                            message : "duplicated",
+                            detail : "unable to sign up"
+                        });
+                        callback('ok', connection);
+                    }
+                }
+            });
+        },
+        //3. connection release
+        function(connection, callback){
+            connection.release();
+            callback(null, null ,'-join/duplicateCheck ? =');
+        }
+    ];
+    async.waterfall(duplicate_check_task , function(err, connection,result){
+        if(connection){
+            connection.release();
+        }
+        if(err){
+            if(err!='ok'){
+                console.log("async.waterfall error : " ,err );
+                res.status(503).send({
+                    message: 'failuire',
+                    detail : 'internal server error'
+                });
+            }
+        }
+        else{
+            console.log(result);
+        }
+    });
+});
+
 
 module.exports = router;
