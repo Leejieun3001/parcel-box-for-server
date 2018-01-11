@@ -11,7 +11,8 @@ const nodemailer = require('nodemailer');
 * request params :
 * memberId (회원 id)
 * memberPassWord (회원 password)
-* mwemberName (회원 이름)
+* memberName (회원 이름)
+* memberPhone (회원전화번호)
 * memberType (택배기사 : 0 /회원 : 1)
 * memberAddress (회원 주소)
 */
@@ -72,13 +73,14 @@ router.post('/' , function(req, res){
        
         let insert_query=
         "insert into user" +
-        "(id, password, name, type, address )"+
-        "values (?,?,?,?,?)";
+        "(id, password, name, phone ,type, address )"+
+        "values (?,?,?,?,?,?)";
 
         let params =[
             req.body.memberId,
             bcryptedPassword,
             req.body.memberName,
+            req.body.memberPhone,
             req.body.memberType,
             req.body.memberAddress
         ];
