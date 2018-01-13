@@ -71,8 +71,8 @@ router.post('/find_id', function (req, res, next) {
     }
 
     var selectId = function (connection, callback) {
-        let sql = "select * from user where id = ? and phone = ?";
-        let param = [req.body.memberId, req.body.phone];
+        let sql = "select * from user where name = ? and phone = ?";
+        let param = [req.body.name, req.body.phone];
         connection.query(sql, param, function (err, rows) {
             if (err) {
                 console.log("duplicate check select query error : ", err);
@@ -80,7 +80,7 @@ router.post('/find_id', function (req, res, next) {
             } else {
                 if (rows.length === 0) {
                     //해당 회원이 없는 경우
-                    resultJson.message = '해당하는 회원의 정보가 없습니다.';
+                    resultJson.message = "NO_USER";
                     res.status(201).send({ resultJson });
                     callback(null, connection);
                 } else {
@@ -106,9 +106,10 @@ router.post('/find_id', function (req, res, next) {
         connection.release();
         callback(null, null, 'api : find_id');
     };
+
     var task = [connect, selectId, releaseConnection];
 
-    async.waterfall(JoinParcel_task, function (err, connection, result) {
+    async.waterfall(task, function (err, connection, result) {
         if (connection) {
             connection.release();
         }
