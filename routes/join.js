@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt-nodejs');
 const async = require('async');
 //이메일 인증 
 const nodemailer = require('nodemailer');
+const mailConfig = require('../config/mailAccount');
 
 /* 회원가입
 * request params :
@@ -206,8 +207,8 @@ router.get('/verificationCode', function(req, res){
     var Transport = nodemailer.createTransport({
         service : "Gmail",
         auth : {
-            user : "jieun3001",         
-            pass : "30905dlwldms!"
+            user : mailConfig.jieun.user,         
+            pass : mailConfig.jieun.pass
         }
     });
     var rand;
@@ -249,7 +250,6 @@ router.get('/verificationCode', function(req, res){
             });
     },
      function(connection, callback){
-            console.log(req.query.tempEmail);
             rand=Math.floor((Math.random() * 10000));
             let mailOption = {
                 to : req.query.tempEmail,
