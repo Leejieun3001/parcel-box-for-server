@@ -18,6 +18,7 @@ const mailConfig = require('../config/mailAccount');
 * memberAddress (회원 주소)
 */
 router.post('/', function (req, res) {
+   
     var resultJson =  {
         message : '',
         detail :''
@@ -124,6 +125,7 @@ router.post('/', function (req, res) {
  * tempEamil(query)
  */
 router.get('/duplicateCheck', function (req, res) {
+  
     var duplicate_check_task = [
         //1. connection 가져오기
         function (callback) {
@@ -199,6 +201,7 @@ router.get('/verificationCode', function (req, res) {
             pass: mailConfig.jieun.pass
         }
     });
+    
     var rand;
     var resultJson = {
         message: '',
@@ -244,8 +247,6 @@ router.get('/verificationCode', function (req, res) {
             + "<br>어플로 돌아가셔서 인증번호를 입력해 주세요.</br>"
             + "<br>감사합니다.</br>"
         };
-        console.log("gkgkgk");
-
         Transport.sendMail(mailOption, function (error, info) {
             if (error) {
                 return console.log(error);
