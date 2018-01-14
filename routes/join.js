@@ -18,9 +18,11 @@ const mailConfig = require('../config/mailAccount');
 * memberAddress (회원 주소)
 */
 router.post('/', function (req, res) {
-    var resultJson = {
-        message: ''
+    var resultJson =  {
+        message : '',
+        detail :''
     };
+   
     var JoinParcel_task = [
         //1.connection 가져오기
         function (callback) {
@@ -46,16 +48,14 @@ router.post('/', function (req, res) {
                         callback(null, connection);
                     } else {
                         //해당 회원이 있는 경우
-                        res.status(201).send({
-                            message: "signup failure",
-                            detail: "duplicated email"
-                        });
+                        resultJson.message = "duplicated";
+                        resultJson.detail = "no sign up";
+                        res.status(201).send(resultJson);
                         callback('ok');
                     }
                 }
             });
         },
-
         //3. bcrypt로 패스워드 해싱
         function (connection, callback) {
             bcrypt.hash(req.body.memberPassword, null, null, function (err, hash) {
@@ -67,10 +67,8 @@ router.post('/', function (req, res) {
                 }
             });
         },
-
         //4. DB에 저장
         function (connection, bcryptedPassword, callback) {
-
             let insert_query =
                 "insert into user" +
                 "(id, password, name, phone ,type, address )" +
@@ -84,7 +82,6 @@ router.post('/', function (req, res) {
                 req.body.memberType,
                 req.body.memberAddress
             ];
-
             connection.query(insert_query, params, function (err, data) {
                 if (err) {
                     console.log("insert query error : ", err);
@@ -92,9 +89,7 @@ router.post('/', function (req, res) {
                 }
                 else {
                     resultJson.message = 'signup success';
-                    res.status(201).send({
-                        resultJson
-                    });
+                    res.status(201).send(resultJson);
                     callback(null, connection);
                 }
             });
@@ -103,22 +98,18 @@ router.post('/', function (req, res) {
         function (connection, callback) {
             connection.release();
             callback(null, null, '-join');
-
         }
-
     ];
 
     async.waterfall(JoinParcel_task, function (err, connection, result) {
         if (connection) {
             connection.release();
         }
-
         if (err) {
             if (err != 'ok') {
                 console.log("async.waterfall error : ", err);
                 res.status(503).send({
                     message: 'failure'
-
                 });
             }
         }
@@ -132,10 +123,8 @@ router.post('/', function (req, res) {
  * request params :
  * tempEamil(query)
  */
-
 router.get('/duplicateCheck', function (req, res) {
     var duplicate_check_task = [
-
         //1. connection 가져오기
         function (callback) {
             pool.getConnection(function (err, connection) {
@@ -162,7 +151,7 @@ router.get('/duplicateCheck', function (req, res) {
                         callback(null, connection);
                     }
                     else {
-                        //해당 회원이 있으면 inser 불가
+                        //해당 회원이 있으면 insert 불가
                         res.status(201).send({
                             message: "duplicated",
                             detail: "unable to sign up"
@@ -178,6 +167,7 @@ router.get('/duplicateCheck', function (req, res) {
             callback(null, null, '-join/duplicateCheck ? =');
         }
     ];
+
     async.waterfall(duplicate_check_task, function (err, connection, result) {
         if (connection) {
             connection.release();
@@ -196,7 +186,6 @@ router.get('/duplicateCheck', function (req, res) {
         }
     });
 });
-
 /**email 인증
  * request params:
  * tempEmail(query)
