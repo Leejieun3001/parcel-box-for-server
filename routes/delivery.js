@@ -29,7 +29,7 @@ router.post('/registerParcel', function(req, res) {
     courier_company : '',
     delivery_num : '',
     delivery_name : '',
-    delivery_state : 0
+    delivery_state : ''
   };
 
   var selectParcelNum = function (connection, callback) {
