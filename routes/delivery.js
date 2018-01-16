@@ -92,13 +92,11 @@ router.post('/registerParcel', function(req, res) {
         if (connection) { connection.release(); }
 
         if (!!err && err == "dup") {
-            console.log("에러에러");
             console.log(result, err);
             resultJson.message = "fail";
-            res.status(503).send(resultJson);
+            res.status(200).send(resultJson);
         }
         else {
-            console.log("성공것ㅇ공");
             console.log(result);
             resultJson.message = 'success';
             res.status(200).send(resultJson);
