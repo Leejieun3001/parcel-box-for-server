@@ -19,6 +19,27 @@ var releaseConnection = function (connection, apiName, callback) {
     callback(null, null, apiName);
 };
 
+router.get('/', function(req, res) {
+      pool.getConnection(function(err, connection) {
+        if(err) {
+          console.log("getConnection error : ",err);
+        }
+        else {
+            let select_query = "select * from user";
+              connection.query(select_query, function(err, data) {
+                if(err) {
+                  console.log("select query error : ", err);
+                  res.status(503).send(data);
+                }
+                else{
+                    res.status(201).send(data);
+                }
+              });
+              connection.release();
+        }
+    });
+});
+
 // 택배 운송장 번호 등록하기
 router.post('/registerParcel', function(req, res) {
   var resultJson = {
