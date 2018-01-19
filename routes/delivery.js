@@ -107,7 +107,6 @@ router.post('/registerParcel', function(req, res) {
             console.log(result);
             resultJson.message = 'success';
             res.status(200).send(resultJson);
-            connection.release();
         }
     });
 });
@@ -124,11 +123,14 @@ router.get('/showDeliveryList', function(req, res) {
   var resultJson = {
     message : '',
     detail : '',
-    parcel_info : '',
-    address : '',
-    name : '',
-    state : ''
+    result : {
+      listSize : 0,
+      list : [
+
+      ]
+    }
   };
+
   var deliveryList = function(connection, callback) {
     let selectQuery = "select parcel.parcel_info, user.address, user.name, delivery.state " +
                       "from delivery " +
@@ -140,15 +142,24 @@ router.get('/showDeliveryList', function(req, res) {
         console.log("select query err : ", err);
         res.status(503).send(resultJson);
         callback(err, connection, null);
-      } ele {
-        console.log("parcel num insert success");
-        console.log("body[0]", req.body.[0]);
-        resultJson.message = 'success1'
-        resultJson.detail = 'get delivery list success';
-        resultJson.parcel_info = req.body.[0];
-        resultJson.address = req.body.[1];
-        resultJson.name = req.body.[2];
-        resultJson.state = req.body.[3];
+      } else {
+        if (data.length !== 0) {
+          console.log("parcel num insert success");
+          resultJson.message = 'success';
+          resultJson.detail = 'get delivery list success';
+          resultJson.result.listSize = data.length;
+
+          for (var x in data) {
+            let deliveryInfo = {};
+            deliveryInfo.parcel_info = data[x].parcel_info;
+            deliveryInfo.address = data[x].address;
+            deliveryInfo.name = data[x].name;
+            deliveryInfo.state = data[x].state;
+            resultJson.result.list.push(deliveryInfo);
+          }
+        } else {
+          resultJson.detail = 'no_data';
+        }
         res.status(200).send(resultJson);
       }
     })
@@ -168,7 +179,6 @@ router.get('/showDeliveryList', function(req, res) {
             console.log(result);
             resultJson.message = 'success';
             res.status(200).send(resultJson);
-            connection.release();
         }
     });
 });

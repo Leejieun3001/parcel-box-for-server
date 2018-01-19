@@ -27,6 +27,6 @@ const async = require('async');
               connection.release();
         }
     });
-});*/
+});
 
 module.exports = router;
