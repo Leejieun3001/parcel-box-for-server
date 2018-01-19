@@ -19,7 +19,14 @@ var releaseConnection = function (connection, apiName, callback) {
     callback(null, null, apiName);
 };
 
-// 택배 운송장 번호 등록하기
+/*
+ * api 목적        : 택배 운송장 번호 등록하기
+ * request params : {string parcel_num: "운송장번호",
+                     int user_idx: 배송시킨 사용자 아이디
+                     int parcel_idx : 배송되는 택배물 아이디
+                     int state : 배송준비중(0), 배송 중(1), 배송 완료(2)
+                     string courier_name : "택배기사 이름" }
+ */
 router.post('/registerParcel', function(req, res) {
   var resultJson = {
     message : '',
@@ -92,6 +99,67 @@ router.post('/registerParcel', function(req, res) {
         if (connection) { connection.release(); }
 
         if (!!err && err == "dup") {
+            console.log(result, err);
+            resultJson.message = "fail";
+            res.status(200).send(resultJson);
+        }
+        else {
+            console.log(result);
+            resultJson.message = 'success';
+            res.status(200).send(resultJson);
+            connection.release();
+        }
+    });
+});
+
+/*
+ * api 목적        : 배송 목록 보여주기 (택배 기사 관점)
+ * request params : { int user_idx : 로그인한 유저(기사) 아이디 }
+ * response params : { string parcel_info : 항목
+                       string address : 배송 주소
+                       string name : 수취인
+                       int state : 배송 준비중(0), 배송 중(1), 배송 완료(2) }
+ */
+router.get('/showDeliveryList', function(req, res) {
+  var resultJson = {
+    message : '',
+    detail : '',
+    parcel_info : '',
+    address : '',
+    name : '',
+    state : ''
+  };
+  var deliveryList = function(connection, callback) {
+    let selectQuery = "select parcel.parcel_info, user.address, user.name, delivery.state " +
+                      "from delivery " +
+                      "join user on (user.idx = delivery.user_idx) " +
+                      "join parcel on (parcel.idx = delivery.parcel_idx)";
+
+    connection.query(selectQuery, function(err, data) {
+      if (err) {
+        console.log("select query err : ", err);
+        res.status(503).send(resultJson);
+        callback(err, connection, null);
+      } ele {
+        console.log("parcel num insert success");
+        console.log("body[0]", req.body.[0]);
+        resultJson.message = 'success1'
+        resultJson.detail = 'get delivery list success';
+        resultJson.parcel_info = req.body.[0];
+        resultJson.address = req.body.[1];
+        resultJson.name = req.body.[2];
+        resultJson.state = req.body.[3];
+        res.status(200).send(resultJson);
+      }
+    })
+  };
+
+    var task = [connect.bind(this), deliveryList, releaseConnection.bind(this)];
+
+    async.waterfall(task, function (err, connection, result) {
+        if (connection) { connection.release(); }
+
+        if (!!err) {
             console.log(result, err);
             resultJson.message = "fail";
             res.status(200).send(resultJson);
