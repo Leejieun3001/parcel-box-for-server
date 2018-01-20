@@ -157,6 +157,7 @@ router.get('/showDeliveryList', function (req, res) {
     connection.query(selectQuery, req.query.user_idx, function (err, data) {
       if (err) {
         console.log("select query err : ", err);
+        resultJson.message = 'fail';
         res.status(503).send(resultJson);
         callback(err, connection, null);
       } else {
