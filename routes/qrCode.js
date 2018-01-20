@@ -38,7 +38,7 @@ router.post('/qrCodeStore', upload.single('qrCode'), function (req, res) {
                 } else callback(null, connection);
             });
         },
-        //2.qrCode등록
+        
         function (connection, callback) {
             let upload_qrCode_query =
                 "update parcel " +
@@ -89,5 +89,6 @@ router.post('/qrCodeStore', upload.single('qrCode'), function (req, res) {
         }
     });
 });
+
 
 module.exports = router;

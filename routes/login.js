@@ -53,6 +53,7 @@ router.post('/', function (req, res) {
                 } else {
                     resultJson.message = "SUCESS";
                     resultJson.data = rows[0];
+                    resultJson.token = jwtModule.makeToken(rows[0]);
                 }
                 res.status(200).send(resultJson);
                 callback(null, connection, "api : login");
