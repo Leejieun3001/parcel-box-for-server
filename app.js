@@ -11,7 +11,6 @@ var login = require('./routes/login');
 var config = require('./config/secretKey');
 var join = require('./routes/join');
 var delivery = require('./routes/delivery');
-var qrcode = require('./routes/qrcode');
 
 var app = express();
 
@@ -33,7 +32,6 @@ app.use('/users', users);
 app.use('/login', login);
 app.use('/join',join);
 app.use('/delivery', delivery);
-app.use('/qrcode', qrcode);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
