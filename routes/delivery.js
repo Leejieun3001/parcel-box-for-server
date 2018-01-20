@@ -137,8 +137,8 @@ router.get('/showDeliveryList', function(req, res) {
                       "join user on (user.idx = delivery.user_idx) " +
                       "join parcel on (parcel.idx = delivery.parcel_idx) " +
                       "where delivery.user_idx = ? ";
-
-    connection.query(selectQuery, req.body.user_idx, function(err, data) {
+    console.log("req.params.user_idx", req.param);
+    connection.query(selectQuery, req.param.user_idx, function(err, data) {
       if (err) {
         console.log("select query err : ", err);
         res.status(503).send(resultJson);
