@@ -3,112 +3,130 @@ const pool = require('../config/dbPool');
 const express = require('express');
 const router = express.Router();
 const async = require('async');
+const aws = require('aws-sdk');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+aws.config.loadFromPath('./config/aws_config.json')
+const s3 = new aws.S3();
+const upload = multer({
+    storage: multerS3({
+        s3: s3,
+        bucket: 'parcel-box',
+        acl: 'public-read',
+        key: function (req, file, cb) {
+            cb(null, Date.now() + '.' + file.originalname.split('.').pop())
+        }
+    })
+});
 
 var connect = function (callback) {
-    pool.getConnection(function (err, connection) {
-        if (err) {
-            console.log("get Connection error : ", err);
-            callback(err, connection, null);
-        }
-        else callback(null, connection);
-    });
+  pool.getConnection(function (err, connection) {
+    if (err) {
+      console.log("get Connection error : ", err);
+      callback(err, connection, null);
+    }
+    else callback(null, connection);
+  });
 };
 
 var releaseConnection = function (connection, apiName, callback) {
-    connection.release();
-    callback(null, null, apiName);
+  connection.release();
+  callback(null, null, apiName);
 };
 
 /*
  * api 목적        : 택배 운송장 번호 등록하기
- * request params : {string parcel_num: "운송장번호",
-                     int user_idx: 배송시킨 사용자 아이디
-                     int parcel_idx : 배송되는 택배물 아이디
-                     int state : 배송준비중(0), 배송 중(1), 배송 완료(2)
-                     string courier_name : "택배기사 이름" }
+ * request params : {string parcel_num: "운송장번호" }
  */
-router.post('/registerParcel', function(req, res) {
+router.post('/registerParcel', upload.single('qrCode'), function (req, res) {
   var resultJson = {
-    message : '',
-    detail : '',
-    courier_name : '',
-    courier_phone : '',
-    courier_company : '',
-    delivery_num : '',
-    delivery_name : '',
-    delivery_state : ''
+    message: ''
   };
 
   var selectParcelNum = function (connection, callback) {
-      let duplicate_query = "select * from delivery where parcel_num = ?";
-      connection.query(duplicate_query, req.body.parcel_num, function (error, rows) {
-           if (error) { callback(error, connection, "Selecet query Error : "); }
-           else { callback(null, connection, rows);}
-      });
-   };
+    let query = "SELECT p.idx, d.parcel_idx FROM user u "
+                + "join parcel p on u.idx = p.user_idx "
+                + "left outer join delivery d on p.idx = d.parcel_idx "
+                + "where p.parcel_num = ?";
+    connection.query(query, req.body.parcel_num, function (error, rows) {
+      if (error) { callback(error, connection, "Selecet query Error : "); }
+      else { callback(null, connection, rows); }
+    });
+  };
 
   //이미 존재하는 운송장 번호인지 확인
-  var onSelectParcelNum = function(connection, rows, callback) {
-    if(rows.length == 0) {   // 해당 운송장 번호가 없는 경우
-      console.log("해당 운송장 번호 없음");
-      resultJson.message = "success";
-      callback(null, connection, "api : delivery-select");
-    }
-    else {   // 해당 운송장 번호가 있으면 이미 등록한 번호를 insert 시키면 안됨
-      console.log("해당 운송장 번호 있음");
-      resultJson.message = "fail";
-      resultJson.detail = "duplicated parcel number";
-      callback("dup", null, "api : delivery-select");
+  var onSelectParcelNum = function (connection, rows, callback) {
+    if (rows.length === 0) {
+      // 전달받은 운송장 번호의 parcel 이 존재하지 않는 경우
+      console.log("해당 운송장 번호 상품 없음");
+      resultJson.message = "NO_PARCEL";
+      res.status(201).send(resultJson);
+      callback('OK', connection, "api : delivery-select");
+    } else if (rows[0].parcel_idx !== null) {
+      // 이미 전달받은 운송장 번호의 배송정보가 존재할 때
+      resultJson.message = "ALREADY_EXIST";
+      res.status(201).send(resultJson);
+      callback('OK', connection, "api : delivery-select");
+    } else if (rows[0].parcel_idx === null) {
+      // 전달받은 운송장 번호의 배송정보가 저장되어 있지 않을 때
+      callback(null, connection, rows[0].idx);
     }
   };
 
-    // 전달하는 택배 기사 정보와 택배물 정보를 DB에 insert.
-    var onInsertParcelNum = function(connection, callback) {
-      let insert_query =
-      "insert into delivery "+
-      "(user_idx, parcel_idx, parcel_num, state, courier_name) "+
-      "values (?, ?, ?, ?, ?)";
-      let params = [
-        req.body.user_idx,
-        req.body.parcel_idx,
-        req.body.parcel_num,
-        req.body.state,
-        req.body.courier_name
-      ];
+  // 전달하는 택배 기사 정보와 택배물 정보를 DB에 insert.
+  var insertDelivery = function (connection, parcel_idx, callback) {
+    let query = "insert into delivery " 
+                + "(parcel_idx, courier_name) " 
+                + "values (?, (select name from user where idx = ?))";
+    let params = [
+      parcel_idx,
+      1
+    ];
 
-      connection.query(insert_query, params, function(err, data) {
-        if(err) {
-          console.log("parcel num insert query error : ", err);
-          res.status(503).send(resultJson);
-          callback(err, connection, null);
-        }
-        else{
-          console.log("parcel num insert success");
-          resultJson.detail = 'delivery register success';
-          resultJson.courier_name = req.body.courier_name;
-          resultJson.delivery_num = req.body.delivery_num;
-          resultJson.delivery_state = 'Preparing to delivery';
-          res.status(200).send(resultJson);
-        }
-      });
-    };
-
-    var task = [connect.bind(this), selectParcelNum, onSelectParcelNum, onInsertParcelNum, releaseConnection.bind(this)];
-
-    async.waterfall(task, function (err, connection, result) {
-        if (connection) { connection.release(); }
-
-        if (!!err && err == "dup") {
-            console.log(result, err);
-            resultJson.message = "fail";
-            res.status(200).send(resultJson);
-        }
-        else {
-            console.log(result);
-            resultJson.message = 'success';
-            res.status(200).send(resultJson);
-        }
+    connection.query(query, params, function (err, data) {
+      if (err) {
+        console.log("delivery insert query error : ", err);
+        res.status(503).send(resultJson);
+        callback(err, connection, null);
+      }
+      else {
+        callback(null, connection, parcel_idx);
+      }
     });
+  };
+
+  var updateQrCode = function (connection, parcel_idx, callback) {
+    let query = "update parcel set qr_code = ? where idx = ?";
+    let imageUrl = req.file.location || null;
+    let param = [
+      imageUrl,
+      parcel_idx
+    ];
+    connection.query(query, param, function (err, data) {
+      if (err) {
+        callback(err, connection, "qrcode update query error : ");
+      } else { 
+        resultJson.message = 'SUCCESS';
+        res.status(201).send(resultJson);
+        callback(null, connection, 'api : registerParcel');
+      }
+    });
+  };
+
+  var task = [connect.bind(this), selectParcelNum, onSelectParcelNum, insertDelivery, updateQrCode, releaseConnection.bind(this)];
+
+  async.waterfall(task, function (err, connection, result) {
+    if (connection) { connection.release(); }
+
+    if (!!err && err !== "OK") {
+      console.log(result, err.message);
+      resultJson.message = "FAILURE";
+      res.status(200).send(resultJson);
+    }
+    else {
+      console.log(result);
+    }
+  });
 });
 
 /*
@@ -119,24 +137,24 @@ router.post('/registerParcel', function(req, res) {
                        string name : 수취인
                        int state : 배송 준비중(0), 배송 중(1), 배송 완료(2) }
  */
-router.get('/showDeliveryList', function(req, res) {
+router.get('/showDeliveryList', function (req, res) {
   var resultJson = {
-    message : '',
-    detail : '',
-    result : {
-      listSize : 0,
-      list : [
+    message: '',
+    detail: '',
+    result: {
+      listSize: 0,
+      list: [
       ]
     }
   };
 
-  var deliveryList = function(connection, callback) {
+  var deliveryList = function (connection, callback) {
     let selectQuery = "select parcel.parcel_info, user.address, user.name, delivery.state " +
-                      "from delivery " +
-                      "join user on (user.idx = delivery.user_idx) " +
-                      "join parcel on (parcel.idx = delivery.parcel_idx) " +
-                      "where delivery.user_idx = ? ";
-    connection.query(selectQuery, req.query.user_idx, function(err, data) {
+      "from delivery " +
+      "join user on (user.idx = delivery.user_idx) " +
+      "join parcel on (parcel.idx = delivery.parcel_idx) " +
+      "where delivery.user_idx = ? ";
+    connection.query(selectQuery, req.query.user_idx, function (err, data) {
       if (err) {
         console.log("select query err : ", err);
         res.status(503).send(resultJson);
@@ -164,22 +182,22 @@ router.get('/showDeliveryList', function(req, res) {
     })
   };
 
-    var task = [connect.bind(this), deliveryList, releaseConnection.bind(this)];
+  var task = [connect.bind(this), deliveryList, releaseConnection.bind(this)];
 
-    async.waterfall(task, function (err, connection, result) {
-        if (connection) { connection.release(); }
+  async.waterfall(task, function (err, connection, result) {
+    if (connection) { connection.release(); }
 
-        if (!!err) {
-            console.log(result, err);
-            resultJson.message = "fail";
-            res.status(200).send(resultJson);
-        }
-        else {
-            console.log(result);
-            resultJson.message = 'success';
-            res.status(200).send(resultJson);
-        }
-    });
+    if (!!err) {
+      console.log(result, err);
+      resultJson.message = "fail";
+      res.status(200).send(resultJson);
+    }
+    else {
+      console.log(result);
+      resultJson.message = 'success';
+      res.status(200).send(resultJson);
+    }
+  });
 });
 
 module.exports = router;
