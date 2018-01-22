@@ -33,35 +33,6 @@ var releaseConnection = function(connection, apiName, callback) {
   callback(null, null, apiName);
 };
 
-// /*
-//  * api 목적        : 택배 운송장 번호 중복 확인
-//  * request params : {string parcel_num: "운송장번호" }
-//  */
-// router.post('/checkParcelNum', function(req, res) {
-//   var resultJson = {
-//     message: ''
-//   };
-//
-//
-//
-//   var task = [connect.bind(this), selectParcelNum, onSelectParcelNum, releaseConnection.bind(this)];
-//
-//   async.waterfall(task, function(err, connection, result) {
-//     if (connection) {
-//       connection.release();
-//     }
-//
-//     if (!!err && err !== "OK") {
-//       console.log(result, err.message);
-//       resultJson.message = "FAILURE";
-//       res.status(200).send(resultJson);
-//     } else {
-//       console.log(result);
-//     }
-//   });
-//
-// });
-
 /*
  * api 목적        : 택배 운송장 번호 등록하기
  * request params : {string parcel_num: "운송장번호" }
