@@ -33,11 +33,40 @@ var releaseConnection = function(connection, apiName, callback) {
   callback(null, null, apiName);
 };
 
+// /*
+//  * api 목적        : 택배 운송장 번호 중복 확인
+//  * request params : {string parcel_num: "운송장번호" }
+//  */
+// router.post('/checkParcelNum', function(req, res) {
+//   var resultJson = {
+//     message: ''
+//   };
+//
+//
+//
+//   var task = [connect.bind(this), selectParcelNum, onSelectParcelNum, releaseConnection.bind(this)];
+//
+//   async.waterfall(task, function(err, connection, result) {
+//     if (connection) {
+//       connection.release();
+//     }
+//
+//     if (!!err && err !== "OK") {
+//       console.log(result, err.message);
+//       resultJson.message = "FAILURE";
+//       res.status(200).send(resultJson);
+//     } else {
+//       console.log(result);
+//     }
+//   });
+//
+// });
+
 /*
- * api 목적        : 택배 운송장 번호 중복 확인
+ * api 목적        : 택배 운송장 번호 등록하기
  * request params : {string parcel_num: "운송장번호" }
  */
-router.post('/checkParcelNum', function(req, res) {
+router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
   var resultJson = {
     message: ''
   };
@@ -75,41 +104,16 @@ router.post('/checkParcelNum', function(req, res) {
     }
   };
 
-  var task = [connect.bind(this), selectParcelNum, onSelectParcelNum, releaseConnection.bind(this)];
-
-  async.waterfall(task, function(err, connection, result) {
-    if (connection) {
-      connection.release();
-    }
-
-    if (!!err && err !== "OK") {
-      console.log(result, err.message);
-      resultJson.message = "FAILURE";
-      res.status(200).send(resultJson);
-    } else {
-      console.log(result);
-    }
-  });
-
-});
-
-/*
- * api 목적        : 택배 운송장 번호 등록하기
- * request params : {string parcel_num: "운송장번호" }
- */
-router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
-  var resultJson = {
-    message: ''
-  };
-
   // 전달하는 택배 기사 정보와 택배물 정보를 DB에 insert.
   var insertDelivery = function(connection, parcel_idx, callback) {
+    console.log("parcel_idx 2" , parcel_idx);
     let query = "insert into delivery " +
-      "(parcel_idx, courier_name) " +
-      "values (?, (select name from user where idx = ?))";
+      "(parcel_idx, state, delivery_idx) " +
+      "values (?, ?, ?)";
     let params = [
       parcel_idx,
-      1
+      1,
+      req.body.user_idx
     ];
 
     connection.query(query, params, function(err, data) {
@@ -141,8 +145,7 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
     });
   };
 
-  // var task = [connect.bind(this), selectParcelNum, onSelectParcelNum, insertDelivery, updateQrCode, releaseConnection.bind(this)];
-  var task = [connect.bind(this), insertDelivery, updateQrCode, releaseConnection.bind(this)];
+  var task = [connect.bind(this), selectParcelNum, onSelectParcelNum, insertDelivery, updateQrCode, releaseConnection.bind(this)];
 
   async.waterfall(task, function(err, connection, result) {
     if (connection) {
@@ -178,11 +181,11 @@ router.get('/showDeliveryList', function(req, res) {
   };
 
   var deliveryList = function(connection, callback) {
-    let selectQuery = "select parcel.parcel_info, user.address, user.name, delivery.state " +
-      "from delivery " +
-      "join user on (user.idx = delivery.user_idx) " +
-      "join parcel on (parcel.idx = delivery.parcel_idx) " +
-      "where delivery.user_idx = ? ";
+    let selectQuery = "select parcel.parcel_info, parcel.address, user.name, delivery.state " +
+      "from user " +
+      "join parcel on user.idx = parcel.user_idx " +
+      "join delivery on delivery.parcel_idx = parcel.idx " +
+      "where delivery.delivery_idx = ? ";
     connection.query(selectQuery, req.query.user_idx, function(err, data) {
       if (err) {
         console.log("select query err : ", err);
