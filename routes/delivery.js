@@ -93,6 +93,7 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
         res.status(503).send(resultJson);
         callback(err, connection, null);
       } else {
+        console.log("parcel num insert success");
         callback(null, connection, parcel_idx);
       }
     });
@@ -107,6 +108,7 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
     ];
     connection.query(query, param, function(err, data) {
       if (err) {
+        console.log("update qr code err");
         callback(err, connection, "qrcode update query error : ");
       } else {
         resultJson.message = 'SUCCESS';
@@ -165,7 +167,6 @@ router.get('/showDeliveryList', function(req, res) {
         callback(err, connection, null);
       } else {
         if (data.length !== 0) {
-          console.log("parcel num insert success");
           resultJson.message = 'success';
           resultJson.detail = 'get delivery list success';
           resultJson.result.listSize = data.length;
