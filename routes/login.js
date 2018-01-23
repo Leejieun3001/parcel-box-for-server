@@ -40,14 +40,6 @@ router.post('/', function (req, res) {
       res.status(200).send(resultJson);
       callback(null, connection, "api : login");
     } else {
-      bcrypt.compare(req.body.password, rows[0].password, function(err, isCorrect) {
-        // isCorrect === true : 일치, isCorrect === false : 불일치
-        if (err) {
-          console.log("비밀번호 에러");
-          resultJson.message = "NO_INFO";
-          res.status(200).send(resultJson);
-          callback(err, connection, "Bcrypt Error : ");
-        }
             bcrypt.compare(req.body.password, rows[0].password, function (err, isCorrect) {
                 // isCorrect === true : 일치, isCorrect === false : 불일치
                 if (err) {
