@@ -30,7 +30,7 @@ var releaseConnection = function (connection, apiName, callback) {
 router.post('/', function (req, res) {
     var resultJson = {
         message: '',
-        data: null
+        user: null
     };
 
     var onSelectUserInfo = function (connection, rows, callback) {
@@ -51,8 +51,8 @@ router.post('/', function (req, res) {
                 if (!isCorrect) {
                     resultJson.message = "INCORRECT";
                 } else {
-                    resultJson.message = "SUCESS";
-                    resultJson.data = rows[0];
+                    resultJson.message = "SUCCESS";
+                    resultJson.user = rows[0];
                     resultJson.token = jwtModule.makeToken(rows[0]);
                 }
                 res.status(200).send(resultJson);
