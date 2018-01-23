@@ -51,8 +51,10 @@ router.get('/get_parcel', function (req, res) {
 
   var selectParcel = function (connection, callback) {
     var decodedToken = jwtModule.decodeToken(req.headers.token);
-    let sql = "SELECT d.state, p.parcel_num, d.courier_name, p.qr_code, p.parcel_info " 
-                + "FROM `parcel-box`.user u right outer join delivery d on u.idx = d.user_idx left outer join parcel p on d.parcel_idx = p.idx "
+    let sql = "SELECT d.state, p.parcel_num, d.courier_name, p.qr_code, p.parcel_info "
+                + "FROM `parcel-box`.user u "
+                + "right outer join delivery d on u.idx = d.user_idx "
+                + "left outer join parcel p on d.parcel_idx = p.idx "
                 + "WHERE u.idx = 1";
 
     connection.query(sql, function (err, rows) {
