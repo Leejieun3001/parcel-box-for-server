@@ -59,10 +59,6 @@ router.post('/', function (req, res) {
                 callback(null, connection, "api : login");
             });
         }
-        res.status(200).send(resultJson);
-        callback(null, connection, "api : login");
-      });
-    }
   }
 
   var selectUserInfo = function(connection, callback) {
