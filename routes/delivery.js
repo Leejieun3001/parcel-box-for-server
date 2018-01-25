@@ -154,7 +154,7 @@ router.get('/showDeliveryList', function(req, res) {
   };
 
   var deliveryList = function(connection, callback) {
-    let selectQuery = "select parcel.parcel_info, parcel.address, user.name, delivery.state " +
+    let selectQuery = "select parcel.parcel_info, parcel.address, parcel.qr_code, user.name, delivery.state " +
       "from user " +
       "join parcel on user.idx = parcel.user_idx " +
       "join delivery on delivery.parcel_idx = parcel.idx " +
@@ -177,6 +177,7 @@ router.get('/showDeliveryList', function(req, res) {
             deliveryInfo.address = data[x].address;
             deliveryInfo.name = data[x].name;
             deliveryInfo.state = data[x].state;
+            deliveryInfo.qrcode = data[x].qr_code;
             resultJson.result.list.push(deliveryInfo);
           }
         } else {
