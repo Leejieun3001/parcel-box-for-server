@@ -42,7 +42,7 @@ router.post('/', function (req, res) {
     } else {
       let test = '$2a$10$EE4JWd41wDF0IpzCS.xaCOjae9gs89PPRJzkLMK18/eOMZzqwAY8S'
                   let test2 = 'aaaAAA111!!!'
-                  bcrypt.compare(test, test2, function (err, isCorrect) {
+                  bcrypt.compareSync(test, test2, function (err, isCorrect) {
                       if (err) {
                           console.log("에러");
                       }
@@ -53,7 +53,7 @@ router.post('/', function (req, res) {
                       }
                   });
 
-            bcrypt.compare(req.body.password, rows[0].password, function (err, isCorrect) {
+            bcrypt.compareSync(req.body.password, rows[0].password, function (err, isCorrect) {
                 // isCorrect === true : 일치, isCorrect === false : 불일치
                 if (err) {
                     resultJson.message = "NO_INFO";
