@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt-nodejs');
 const async = require('async');
-//이메일 인증 
+//이메일 인증
 const nodemailer = require('nodemailer');
 const mailConfig = require('../config/mailAccount');
 
@@ -18,12 +18,12 @@ const mailConfig = require('../config/mailAccount');
 * memberAddress (회원 주소)
 */
 router.post('/', function (req, res) {
-   
+
     var resultJson =  {
         message : '',
         detail :''
     };
-   
+
     var JoinParcel_task = [
         //1.connection 가져오기
         function (callback) {
@@ -60,6 +60,7 @@ router.post('/', function (req, res) {
         //3. bcrypt로 패스워드 해싱
         function (connection, callback) {
             bcrypt.hash(req.body.memberPassword, null, null, function (err, hash) {
+              console.log("req.body.memberPassWord : ", req.body.memberPassWord);
                 if (err) {
                     console.log('bcrypt hashing error : ', err);
                     callback(err, connection, null);
@@ -74,7 +75,7 @@ router.post('/', function (req, res) {
                 "insert into user" +
                 "(id, password, name, phone ,type, address )" +
                 "values (?,?,?,?,?,?)";
-
+            console.log("bcryptedPassword : ", bcryptedPassword);
             let params = [
                 req.body.memberId,
                 bcryptedPassword,
@@ -95,7 +96,7 @@ router.post('/', function (req, res) {
                 }
             });
         },
-        //5.connection release 
+        //5.connection release
         function (connection, callback) {
             connection.release();
             callback(null, null, '-join');
@@ -125,7 +126,7 @@ router.post('/', function (req, res) {
  * tempEamil(query)
  */
 router.get('/duplicateCheck', function (req, res) {
-  
+
     var duplicate_check_task = [
         //1. connection 가져오기
         function (callback) {
@@ -201,7 +202,7 @@ router.get('/verificationCode', function (req, res) {
             pass: mailConfig.jieun.pass
         }
     });
-    
+
     var rand;
     var resultJson = {
         message: '',
