@@ -41,17 +41,32 @@ router.post('/', function (req, res) {
       callback(null, connection, "api : login");
     } else {
       let test = '$2a$10$EE4JWd41wDF0IpzCS.xaCOjae9gs89PPRJzkLMK18/eOMZzqwAY8S'
-                  let test2 = 'aaaAAA111!!!'
-                  bcrypt.compare(test, test2, function (err, isCorrect) {
-                      if (err) {
-                          console.log("에러");
-                      }
-                      if (!isCorrect) {
-                          console.log("불일치");
-                      } else {
-                          console.log("일치");
-                      }
-                  });
+           let test2 = 'aaaAAA111!!!'
+           bcrypt.compare(test, test2, function (err, isCorrect) {
+               if (err) {
+                   console.log("기존에러");
+               }
+               if (!isCorrect) {
+                   console.log("기존 비밀번호 불일치");
+               } else {
+                   console.log("기존 비밀번호일치");
+               }
+           });
+
+           let test3 ='$2a$10$l1vo0D/H6Smx/dCN6gN3e.PzWboOKBHzB.GsJ8stDBrMq57A018ta'
+           let test4 = 'N4Rr4M3BFB'
+            bcrypt.compare(test3, test4, function (err, isCorrect) {
+               if (err) {
+                   console.log("개로운 비밀번호 에러");
+               }
+               if (!isCorrect) {
+                   console.log("새로운 비밀번호 불일치");
+               } else {
+                   console.log("새로운 비밀번호 일치");
+               }
+           });
+           console.log("입력한 비밀번호" + req.body.password);
+           console.log("DB 에 저장된 " + rows[0].password);
 
             bcrypt.compare(req.body.password, rows[0].password, function (err, isCorrect) {
                 // isCorrect === true : 일치, isCorrect === false : 불일치
@@ -198,6 +213,8 @@ router.post('/find_password', function(req, res) {
       } else {
         let sql = 'update user set password = ? where id = ?';
         let params = [hash, req.body.id];
+        console.log("새로운 암호화된 패스워드는"+hash);
+        console.log( "새로운 패스 워드는" + newPassword);
         connection.query(sql, params, function(error, rows) {
           if (error) {
             callback(error, connection, "Selecet query Error : ");

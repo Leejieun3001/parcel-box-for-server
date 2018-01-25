@@ -60,8 +60,10 @@ router.post('/', function (req, res) {
         //3. bcrypt로 패스워드 해싱
         function (connection, callback) {
             bcrypt.hash(req.body.memberPassword, null, null, function (err, hash) {
-              console.log("req.body.memberPassWord : ", req.body.memberPassWord);
+
                 if (err) {
+                  console.log("회원가입시 입력한 비빌번호"+ req.body.memberPassword);
+                    console.log("암호화된 비밀번호"+ hash);
                     console.log('bcrypt hashing error : ', err);
                     callback(err, connection, null);
                 } else {
@@ -76,6 +78,7 @@ router.post('/', function (req, res) {
                 "(id, password, name, phone ,type, address )" +
                 "values (?,?,?,?,?,?)";
             console.log("bcryptedPassword : ", bcryptedPassword);
+
             let params = [
                 req.body.memberId,
                 bcryptedPassword,
