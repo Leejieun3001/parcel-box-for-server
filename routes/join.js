@@ -19,92 +19,85 @@ const mailConfig = require('../config/mailAccount');
 */
 router.post('/', function (req, res) {
 
-    var resultJson =  {
-        message : '',
-        detail :''
+    var resultJson = {
+        message: '',
+        detail: ''
     };
-
-    var JoinParcel_task = [
-        //1.connection 가져오기
-        function (callback) {
-            pool.getConnection(function (err, connection) {
-                if (err) {
-                    console.log("getConnection error : ", err);
-                    callback(err, connection, null);
-                }
-                else callback(null, connection);
-            });
-        },
-        //2. 이미 존재하는 회원이지 확인
-        function (connection, callback) {
-            let duplicate_check_query =
-                "select * from user where id = ?";
-            connection.query(duplicate_check_query, req.body.memberId, function (err, data) {
-                if (err) {
-                    console.log("duplicate check select query error : ", err);
-                    callback(err, connection, null);
-                } else {
-                    if (data.length == 0) {
-                        //해당 회원이 없는 경우
-                        callback(null, connection);
-                    } else {
-                        //해당 회원이 있는 경우
-                        resultJson.message = "duplicated";
-                        resultJson.detail = "no sign up";
-                        res.status(201).send(resultJson);
-                        callback('ok');
-                    }
-                }
-            });
-        },
-        //3. bcrypt로 패스워드 해싱
-        function (connection, callback) {
-            bcrypt.hash(req.body.memberPassword, null, null, function (err, hash) {
-
-                if (err) {
-                  console.log("회원가입시 입력한 비빌번호"+ req.body.memberPassword);
-                    console.log("암호화된 비밀번호"+ hash);
-                    console.log('bcrypt hashing error : ', err);
-                    callback(err, connection, null);
-                } else {
-                    callback(null, connection, hash);
-                }
-            });
-        },
-        //4. DB에 저장
-        function (connection, bcryptedPassword, callback) {
-            let insert_query =
-                "insert into user" +
-                "(id, password, name, phone ,type, address )" +
-                "values (?,?,?,?,?,?)";
-            console.log("bcryptedPassword : ", bcryptedPassword);
-
-            let params = [
-                req.body.memberId,
-                bcryptedPassword,
-                req.body.memberName,
-                req.body.memberPhone,
-                req.body.memberType,
-                req.body.memberAddress
-            ];
-            connection.query(insert_query, params, function (err, data) {
-                if (err) {
-                    console.log("insert query error : ", err);
-                    callback(err, connection, null);
-                }
-                else {
-                    resultJson.message = 'signup success';
-                    res.status(201).send(resultJson);
+    //1.connection 가져오기
+    var connect = function (callback) {
+        pool.getConnection(function (err, connection) {
+            if (err) {
+                console.log("getConnection error : ", err);
+                callback(err, connection, null);
+            }
+            else callback(null, connection);
+        });
+    }
+    //2. 이미 존재하는 회원이지 확인
+    var selectEmailInfo = function (connection, callback) {
+        let duplicate_check_query =
+            "select * from user where id = ?";
+        connection.query(duplicate_check_query, req.body.memberId, function (err, data) {
+            if (err) {
+                console.log("duplicate check select query error : ", err);
+                callback(err, connection, null);
+            } else {
+                if (data.length == 0) {
+                    //해당 회원이 없는 경우
                     callback(null, connection);
+                } else {
+                    //해당 회원이 있는 경우
+                    resultJson.message = "duplicated";
+                    resultJson.detail = "no sign up";
+                    res.status(201).send(resultJson);
+                    callback('ok');
                 }
-            });
-        },
-        //5.connection release
-        function (connection, callback) {
-            connection.release();
-            callback(null, null, '-join');
-        }
-    ];
+            }
+        });
+    }
+    //3. bcrypt로 패스워드 해싱
+    var bcryptedPassword = function (connection, callback) {
+
+        bcrypt.hash(req.body.memberPassword, null, null, function (err, hash) {
+            if (err) {
+                callback(err, connection, "Bcrypt hashing Error : ");
+            } else {
+                callback(null, connection, hash);
+            }
+        });
+    }
+    //4. DB에 저장
+    var insertUserInfo = function (connection, hash, callback) {
+        let insert_query =
+            "insert into user" +
+            "(id, password, name, phone ,type, address )" +
+            "values (?,?,?,?,?,?)";
+        let params = [
+            req.body.memberId,
+            hash,
+            req.body.memberName,
+            req.body.memberPhone,
+            req.body.memberType,
+            req.body.memberAddress
+        ];
+        connection.query(insert_query, params, function (err, data) {
+            if (err) {
+                console.log("insert query error : ", err);
+                callback(err, connection, null);
+            }
+            else {
+                resultJson.message = 'signup success';
+                resultJson.detail = 'signup success'; res.status(201).send(resultJson);
+                callback(null, connection);
+            }
+        });
+    }
+    //5.커넥션 릴리즈
+    var releaseConnection = function (connection, callback) {
+        connection.release();
+        callback(null, null, '-join');
+    }
+    var JoinParcel_task = [connect, selectEmailInfo, bcryptedPassword, insertUserInfo, releaseConnection];
 
     async.waterfall(JoinParcel_task, function (err, connection, result) {
         if (connection) {
