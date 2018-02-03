@@ -48,7 +48,6 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
       "left outer join delivery d on p.idx = d.parcel_idx " +
       "where p.parcel_num = ?";
 
-      console.log(query, req.body.parcel_num);
     connection.query(query, req.body.parcel_num, function(error, rows) {
       if (error) {
         callback(error, connection, "Selecet query Error : ");
