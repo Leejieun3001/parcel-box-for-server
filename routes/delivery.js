@@ -86,7 +86,7 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
       1,
       req.body.user_idx
     ];
-
+	console.log('insert delivery');
     connection.query(query, params, function(err, data) {
       if (err) {
         console.log("delivery insert query error : ", err);
