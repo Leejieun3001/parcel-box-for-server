@@ -71,6 +71,7 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
       callback('OK', connection, "api : delivery-select");
     } else if (rows[0].parcel_idx === null) {
       // 전달받은 운송장 번호의 배송정보가 저장되어 있지 않을 때
+      resultJson.message = "SUCCESS";
       callback(null, connection, rows[0].idx);
     }
   };
