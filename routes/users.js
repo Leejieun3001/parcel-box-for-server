@@ -51,13 +51,21 @@ router.get('/get_parcel', function (req, res) {
 
   var selectParcel = function (connection, callback) {
     var decodedToken = jwtModule.decodeToken(req.headers.token);
+<<<<<<< Updated upstream
     let sql = "SELECT d.state, p.parcel_num, d.courier_name, p.qr_code, p.parcel_info "
                 + "FROM `parcel-box`.user u "
                 + "right outer join delivery d on u.idx = d.user_idx "
                 + "left outer join parcel p on d.parcel_idx = p.idx "
                 + "WHERE u.idx = 1";
+=======
+    let sql = "SELECT d.state, p.parcel_num, d.courier_name, p.qr_code, p.parcel_info " 
+                + "FROM user u "
+                + "join parcel p on u.idx = p.user_idx "
+                + "left outer join delivery d on p.idx = d.parcel_idx "
+                + "WHERE u.idx = ?";
+>>>>>>> Stashed changes
 
-    connection.query(sql, function (err, rows) {
+    connection.query(sql, decodedToken.idx, function (err, rows) {
       if (err) { callback(err, connection, "Select query Error : "); }
       else { callback(null, connection, rows); }
     });
@@ -69,7 +77,7 @@ router.get('/get_parcel', function (req, res) {
     if (connection) { connection.release(); }
 
     if (!!err) {
-      console.log(result, err);
+      console.log(result, err,message);
       resultJson.message = "FAILURE";
       res.status(503).send(resultJson);
     }

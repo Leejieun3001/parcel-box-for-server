@@ -11,7 +11,7 @@ const mailConfig = require('../config/mailAccount');
 var connect = function (callback) {
     pool.getConnection(function (err, connection) {
         if (err) {
-            console.log("get Connection error : ", err);
+            console.log("get Connection error : ", err.message);
             callback(err, connection, null);
         } else callback(null, connection);
     });
@@ -82,7 +82,7 @@ router.post('/', function (req, res) {
         }
 
         if (!!err) {
-            console.log(result, err);
+            console.log(result, err.message);
             resultJson.message = "FAILURE";
             res.status(503).send(resultJson);
         } else {
@@ -150,7 +150,7 @@ router.post('/find_id', function (req, res) {
         }
 
         if (!!err) {
-            console.log(result, err);
+            console.log(result, err.message);
             resultJson.message = "FAILURE";
             res.status(503).send(resultJson);
         } else {
@@ -259,7 +259,7 @@ router.post('/find_password', function (req, res) {
         }
 
         if (!!err) {
-            console.log(result, err);
+            console.log(result, err.message);
             resultJson.message = "FAILURE";
             res.status(503).send(resultJson);
         } else {

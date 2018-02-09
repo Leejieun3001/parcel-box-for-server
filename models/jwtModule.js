@@ -8,15 +8,14 @@ const option = {
   expiresIn :  "7d"    //토큰의 유효기간
 };
 const payload = {
-  id : 0
+  idx : 0,
+  id : ''
 };
 
 //토큰 발급하기
 function makeToken (value) {
-  if(!value.id){
-    value.id = 0;
-  }
-  payload.id = value.id;
+  payload.idx = value.idx || 0;
+  payload.id = value.id || '';
   var token = jwt.sign(payload, secretKey, option);
   return token;
 }

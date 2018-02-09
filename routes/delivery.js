@@ -6,6 +6,7 @@ const async = require('async');
 const aws = require('aws-sdk');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
+const jwtModule = require('../models/jwtModule');
 aws.config.loadFromPath('./config/aws_config.json')
 const s3 = new aws.S3();
 const upload = multer({
@@ -61,7 +62,6 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
   var onSelectParcelNum = function(connection, rows, callback) {
     if (rows.length === 0) {
       // 전달받은 운송장 번호의 parcel 이 존재하지 않는 경우
-      console.log("해당 운송장 번호 상품 없음");
       resultJson.message = "NO_PARCEL";
       res.status(201).send(resultJson);
       callback('OK', connection, "api : delivery-select");
@@ -79,19 +79,19 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
 
   // 전달하는 택배 기사 정보와 택배물 정보를 DB에 insert.
   var insertDelivery = function(connection, parcel_idx, callback) {
-    console.log("parcel_idx 2" , parcel_idx);
+    var decodedToken = jwtModule.decodeToken(req.headers.token);
+    console.log('token', decodedToken.idx);
     let query = "insert into delivery " +
-      "(parcel_idx, state, delivery_idx) " +
-      "values (?, ?, ?)";
+      "(parcel_idx, deliver_idx) " +
+      "values (?, ?)";
     let params = [
       parcel_idx,
-      1,
-      req.body.user_idx
+      decodedToken.idx
     ];
 	console.log('insert delivery');
     connection.query(query, params, function(err, data) {
       if (err) {
-        console.log("delivery insert query error : ", err);
+        console.log("delivery insert query error : ", err.message);
         res.status(503).send(resultJson);
         callback(err, connection, null);
       } else {
@@ -122,6 +122,7 @@ router.post('/registerParcel', upload.single('qrCode'), function(req, res) {
 
   var task = [connect.bind(this), selectParcelNum, onSelectParcelNum, insertDelivery, updateQrCode, releaseConnection.bind(this)];
 
+  console.log('register');
   async.waterfall(task, function(err, connection, result) {
     if (connection) {
       connection.release();
@@ -160,7 +161,7 @@ router.get('/showDeliveryList', function(req, res) {
       "from user " +
       "join parcel on user.idx = parcel.user_idx " +
       "join delivery on delivery.parcel_idx = parcel.idx " +
-      "where delivery.delivery_idx = ? ";
+      "where delivery.deliver_idx = ? ";
     connection.query(selectQuery, req.query.user_idx, function(err, data) {
       if (err) {
         console.log("select query err : ", err);
@@ -192,6 +193,7 @@ router.get('/showDeliveryList', function(req, res) {
 
   var task = [connect.bind(this), deliveryList, releaseConnection.bind(this)];
 
+  console.log('show');
   async.waterfall(task, function(err, connection, result) {
     if (connection) {
       connection.release();
@@ -208,5 +210,6 @@ router.get('/showDeliveryList', function(req, res) {
     }
   });
 });
+
 
 module.exports = router;
