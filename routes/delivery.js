@@ -212,4 +212,44 @@ router.get('/showDeliveryList', function(req, res) {
 });
 
 
+/*
+ * api 목적        : 택배 운송장 번호 등록하기
+ * request params : {int parcel_num: 운송장번호 }
+ */
+router.post('/compareQrCode', function(req, res) {
+  var resultJson = {
+    message: ''
+  };
+
+  var updateState = function(connection, callback) {
+    let query = "update delivery set state = 2 where parcel_idx = (select idx from parcel where parcel_num = ?)";
+    connection.query(query, req.query.parcel_num, function(err, data) {
+      if (err) {
+        console.log("update state err");
+        callback(err, connection, "qrcode update query error : ");
+      } else {
+        resultJson.message = 'SUCCESS';
+        res.status(201).send(resultJson);
+        callback(null, connection, 'api : compareQrCode');
+      }
+    });
+  };
+
+  var task = [connect.bind(this), updateState, releaseConnection.bind(this)];
+
+  async.waterfall(task, function(err, connection, result) {
+    if (connection) {
+      connection.release();
+    }
+
+    if (!!err && err !== "OK") {
+      console.log(result, err.message);
+      resultJson.message = "FAILURE";
+      res.status(200).send(resultJson);
+    } else {
+      console.log(result);
+    }
+  });
+});
+
 module.exports = router;
